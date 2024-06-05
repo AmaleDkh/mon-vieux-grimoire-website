@@ -58,7 +58,10 @@ exports.createBook = (req, res, next) => {
 // POST /api/books/:id/rating
 exports.createNewBookRating = (req, res, next) => {
   const id = req.params.id;
-  const newRating = req.body;
+  const newRating = {
+    userId: req.body.userId,
+    grade: req.body.rating,
+  };
 
   if (!("userId" in newRating) || !("grade" in newRating)) {
     return res.status(400).json("userId or grade is missing");
@@ -95,16 +98,16 @@ exports.createNewBookRating = (req, res, next) => {
       // Calculate the average ratings after adding the new rating
       averageRating = (totalRatings + newRating.grade) / (ratingsLength + 1);
 
-      return Book.updateOne(
+      return Book.findOneAndUpdate(
         { _id: id },
         {
           $push: { ratings: newRating },
           $set: { averageRating: averageRating },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
     })
-    .then(() => res.status(200).json({ message: "The rating is updated" }))
+    .then((book) => res.status(200).json(book))
     .catch((error) => res.status(400).json(error.message));
 };
 
